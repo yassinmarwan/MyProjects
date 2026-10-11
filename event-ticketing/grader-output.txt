@@ -1,0 +1,109 @@
+╔══════════════════════════════════════════════════════════╗
+║          SCALABLE GRADING SYSTEM                         ║
+║  Project: M1  Mode: student          v: spring2026-5.0      ║
+╚══════════════════════════════════════════════════════════╝
+
+📋 Theme detected: EVENT
+   Database: eventticketingdb
+   Services: user-service, event-service, ticket-service, booking-service, sales-service
+   Grading: sales-service only
+
+==================================================
+GIT WORKFLOW CHECKS
+==================================================
+  -> 18/18 passed
+
+==================================================
+DOCKER CHECKS
+==================================================
+  -> 12/12 passed
+
+  Host repo path: /Users/apple/Desktop/22-last-acl-EventTicketing
+  Copying repo to writable host workspace...
+  Host workspace: /Users/apple/Desktop/.m1-grader-ws
+  Local workspace: /tmp/m1-grader-workspace
+  Pulling Docker images (if needed)...
+  Merged 7 student dep(s): org.springframework.boot:spring-boot-starter-data-redis, commons-codec:commons-codec, org.springframework.boot:spring-boot-starter-security, io.jsonwebtoken:jjwt-api, io.jsonwebtoken:jjwt-impl, io.jsonwebtoken:jjwt-jackson, org.springframework.boot:spring-boot-starter-data-mongodb
+
+==================================================
+PHASE 1: PARALLEL BUILD
+==================================================
+  sales-service: prepared (package: com.team22.eventticketing.sales)
+  Building 1 services in parallel...
+  [23s] sales-service: build ✓ (15s) [1/1]
+  Phase 1 completed in 23s
+
+==================================================
+PHASE 2: TEST EXECUTION (1 services)
+==================================================
+
+==================================================
+SERVICE 5: sales-service (1/1)
+==================================================
+  Running tests...
+    Health check passed, app running at m1-app-sales-service-29:8080
+    [10s] Compilation done, running tests...
+    [43s] ✓ 0/1 passed (0 failures, 1 errors)
+    [44s] ✗ BUILD FAILURE
+    Maven test failed:
+[ERROR]
+[ERROR] See /project/target/surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+    ── End Maven output (44s) ──
+  -> 0/1 passed (70s)
+
+  All tests completed in 70s
+
+  Cleaning up...
+
+============================================================
+[1mMILESTONE 1 — GRADING REPORT[0m
+============================================================
+
+[1mGit Workflow[0m: [92m18/18[0m
+  [92m✓[0m GIT-01
+  [92m✓[0m GIT-02
+  [92m✓[0m GIT-03
+  [92m✓[0m GIT-04
+  [92m✓[0m GIT-05
+  [92m✓[0m GIT-06
+  [92m✓[0m GIT-07
+  [92m✓[0m GIT-08
+  [92m✓[0m GIT-09
+  [92m✓[0m GIT-10
+  [92m✓[0m GIT-11
+  [92m✓[0m GIT-12
+  [92m✓[0m GIT-13
+  [92m✓[0m GIT-14
+  [92m✓[0m GIT-15
+  [92m✓[0m GIT-16
+  [92m✓[0m GIT-17
+  [92m✓[0m GIT-18
+
+[1mDocker[0m: [92m12/12[0m
+  [92m✓[0m DOCKER-01
+  [92m✓[0m DOCKER-02
+  [92m✓[0m DOCKER-03
+  [92m✓[0m DOCKER-04
+  [92m✓[0m DOCKER-05
+  [92m✓[0m DOCKER-06
+  [92m✓[0m DOCKER-07
+  [92m✓[0m DOCKER-08
+  [92m✓[0m DOCKER-09
+  [92m✓[0m DOCKER-10
+  [92m✓[0m DOCKER-11
+  [92m✓[0m DOCKER-12
+
+[1mJUnit Tests[0m: [91m0/1[0m
+  [91m✗[0m S5- — init() timed out after 30 seconds
+
+============================================================
+[1mTotal: [92m30/31 (96.8%)[0m
+============================================================

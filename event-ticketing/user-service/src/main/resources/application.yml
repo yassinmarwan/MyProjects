@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://user-postgres:5432/etdb-users
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: redispass
+  mongodb:
+    uri: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin
+  application:
+    name: user-service
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+
+jwt:
+  secret: ${JWT_SECRET:24966c8a763b3a3f7f264cefb93d95159184e8c5e2af5c94e05387371d47a3fd=}
+  expiration: ${JWT_EXPIRATION_MS:86400000}
+
+
+feign:
+  booking-service:
+    url: ${BOOKING_SERVICE_URL:http://booking-service:8080}
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      bookingService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        register-health-indicator: true
+  timelimiter:
+    instances:
+      bookingService:
+        timeout-duration: 5s

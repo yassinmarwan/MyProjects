@@ -1,0 +1,53 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://sales-postgres:5432/etdb-sales
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: redispass
+  mongodb:
+    uri: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-retries: 3
+
+feign:
+  user-service:
+    url: ${FEIGN_USER_SERVICE_URL:http://user-service:8080}
+  booking-service:
+    url: ${FEIGN_BOOKING_SERVICE_URL:http://booking-service:8080}
+  event-service:
+    url: ${FEIGN_EVENT_SERVICE_URL:http://event-service:8080}
+  ticket-service:
+    url: ${FEIGN_TICKET_SERVICE_URL:http://ticket-service:8080}
+
+jwt:
+  secret: ${JWT_SECRET:24966c8a763b3a3f7f264cefb93d95159184e8c5e2af5c94e05387371d47a3fd=}
+  expiration: ${JWT_EXPIRATION_MS:86400000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,health,info"
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/etdb-events
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  mongodb:
+    uri: mongodb://root:rootpass@localhost:27017/eventticketingmongo?authSource=admin
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redispass
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+feign:
+  user-service:
+    url: http://localhost:9999
+  booking-service:
+    url: http://localhost:9999
+  ticket-service:
+    url: http://localhost:9999
+  event-service:
+    url: http://localhost:9999
+  sales-service:
+    url: http://localhost:9999

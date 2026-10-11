@@ -1,0 +1,16 @@
+[ {"studentId":"55-2491","name":"Youssef Adel Atef Youssef","githubUsername":"YoussefAdel617","service":"user-service"},
+  {"studentId":"55-11216","name":"Zeyad Mohamed Attia","githubUsername":"ZeyadAttia5","service":"user-service"},
+  {"studentId":"55-1535","name":"Yassin Marwan Mohamed","githubUsername":"yassinmarwan","service":"event-service"},
+  {"studentId":"55-11181","name":"Omar mostafa","githubUsername":"omar-medhat2","service":"user-service"},
+  {"studentId":"55-1498","name":"Ramez Magdy Kamal","githubUsername":"Ramezmagdyy","service":"event-service"},
+  {"studentId":"55-0600","name":"Omar Saleh","githubUsername":"omarsaleh10","service":"event-service"},
+  {"studentId":"55-2265","name":"Horein ayman","githubUsername":"7oorein","service":"ticket-service"},
+  {"studentId":"55-0486","name":"Mohamed Hussien Emara","githubUsername":"MohamedEmara15","service":"booking-service"},
+  {"studentId":"55-0491","name":"Mahmoud Hussien Emara","githubUsername":"MahmoudEmara12","service":"booking-service"},
+  {"studentId":"55-0605","name":"Karim Khaled Gazia","githubUsername":"KarimGazya","service":"booking-service"},
+  {"studentId":"55-2296","name":"Moaaz samir kamel","githubUsername":"moaaz714","service":"ticket-service"},
+  {"studentId":"55-1937","name":"Hamza hatem","githubUsername":"hamzaElShammaa","service":"ticket-service"},
+  {"studentId":"55-8070","name":"Youssef Wael Mansour","githubUsername":"Youssefmansoor","service":"sales-service"},
+  {"studentId":"55-23449","name":"Omar Saqr","githubUsername":"Omarsaqr","service":"sales-service"},
+  {"studentId":"55-5679","name":"Abdelrahman Osama","githubUsername":"abdelrahmanosama20","service":"sales-service"}
+]
