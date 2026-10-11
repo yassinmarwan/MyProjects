@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: event-service
+  datasource:
+    url: jdbc:postgresql://event-postgres:5432/etdb-events
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: redispass
+
+  mongodb:
+    uri: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin
+
+  elasticsearch:
+    uris: http://elasticsearch:9200
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-retries: 3
+
+feign:
+  user-service:
+    url: ${USER_SERVICE_URL:http://user-service:8080}
+  booking-service:
+    url: ${BOOKING_SERVICE_URL:http://booking-service:8080}
+  ticket-service:
+    url: ${TICKET_SERVICE_URL:http://ticket-service:8080}
+  event-service:
+    url: ${EVENT_SERVICE_URL:http://event-service:8080}
+  sales-service:
+    url: ${SALES_SERVICE_URL:http://sales-service:8080}
+
+jwt:
+  secret: ${JWT_SECRET:24966c8a763b3a3f7f264cefb93d95159184e8c5e2af5c94e05387371d47a3fd=}
+  expiration: ${JWT_EXPIRATION_MS:86400000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,health,info"
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

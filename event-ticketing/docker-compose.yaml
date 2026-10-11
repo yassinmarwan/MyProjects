@@ -1,0 +1,305 @@
+services:
+  # Shared Database (ticket-service only — not yet migrated to M3)
+  postgres:
+    image: postgres:15-alpine
+    container_name: eventticketing-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=eventticketingdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eventticketingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Per-service PostgreSQL instances (M3)
+  user-postgres:
+    image: postgres:15-alpine
+    container_name: eventticketing-user-db
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=etdb-users
+    volumes:
+      - user-pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d etdb-users"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  event-postgres:
+    image: postgres:15-alpine
+    container_name: eventticketing-event-db
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=etdb-events
+    volumes:
+      - event-pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d etdb-events"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  booking-postgres:
+    image: postgres:15-alpine
+    container_name: eventticketing-booking-db
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=etdb-bookings
+    volumes:
+      - booking-pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d etdb-bookings"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sales-postgres:
+    image: postgres:15-alpine
+    container_name: eventticketing-sales-db
+    ports:
+      - "5436:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=etdb-sales
+    volumes:
+      - sales-pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d etdb-sales"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: eventticketing-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service (Port 8081)
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  # Event Service (Port 8082)
+  event-service:
+    build: ./event-service
+    container_name: event-service
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin
+      SPRING_RABBITMQ_HOST: rabbitmq
+      BOOKING_SERVICE_URL: http://booking-service:8080
+      USER_SERVICE_URL: http://user-service:8080
+      TICKET_SERVICE_URL: http://ticket-service:8080
+      EVENT_SERVICE_URL: http://event-service:8080
+    depends_on:
+      event-postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Booking Service (Port 8083)
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      booking-postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Ticket Service (Port 8084) — still on shared DB
+  ticket-service:
+    build: ./ticket-service
+    container_name: ticket-service
+    ports:
+      - "8084:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/eventticketingdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      cassandra:
+        condition: service_healthy
+
+  # API Gateway (Port 8080)
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+
+  # Sales Service (Port 8085)
+  sales-service:
+    build: ./sales-service
+    container_name: sales-service
+    ports:
+      - "8085:8080"
+    depends_on:
+      sales-postgres:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:latest
+    container_name: eventticketing-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpass
+      MONGO_INITDB_DATABASE: eventticketingmongo
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    container_name: eventticketing-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redispass --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "redispass", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+    container_name: eventticketing-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms200m -Xmx200m"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  neo4j:
+    image: neo4j:latest
+    container_name: eventticketing-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/neo4jpass
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_heap_initial__size: 256m
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: [ "CMD", "neo4j", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  cassandra:
+    image: cassandra:latest
+    container_name: eventticketing-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=eventticketingcluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_KEYSPACE=eventticketingks
+      - JVM_OPTS=-Xms256M -Xmx256M
+      - MAX_HEAP_SIZE=256M
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  pgdata:
+  user-pgdata:
+  event-pgdata:
+  booking-pgdata:
+  sales-pgdata:
+  mongo-data:
+  es-data:
+  neo4j-data:
+  cassandra-data:

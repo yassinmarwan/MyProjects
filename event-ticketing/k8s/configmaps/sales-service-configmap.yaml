@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sales-service-configmap
+  namespace: eventticketing
+data:
+  SPRING_APPLICATION_NAME: sales-service
+  SPRING_DATASOURCE_URL: jdbc:postgresql://sales-postgres:5432/etdb-sales
+  SPRING_RABBITMQ_HOST: rabbitmq
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_MONGODB_URI: mongodb://root:rootpass@mongo:27017/eventticketingmongo?authSource=admin

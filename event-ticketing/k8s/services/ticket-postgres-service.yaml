@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: ticket-postgres
+  namespace: eventticketing
+
+spec:
+  selector:
+    app: ticket-postgres
+
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+  clusterIP: None

@@ -1,0 +1,844 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  # ── Provider config — tells Grafana to load JSON files from /etc/grafana/dashboards ──
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: "default"
+        orgId: 1
+        folder: "Event Ticketing"
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /etc/grafana/dashboards
+
+  # ── S1: User Service Dashboard (owned by S1-INFRA) ──
+  user-dashboard.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["user-service", "eventticketing"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "User Service Dashboard",
+      "uid": "user-service-dashboard",
+      "version": 1,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate (errors per minute)",
+          "type": "timeseries",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"user-service\", level=\"ERROR\"}[1m]))",
+              "legendFormat": "errors/min",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "RabbitMQ Event Audit (user.registered / user.deactivated)",
+          "type": "logs",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"user-service\"} |~ \"routingKey|user\\.registered|user\\.deactivated\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Feign Call Outcomes",
+          "type": "logs",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"user-service\"} |~ \"Feign|FeignException\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Request Rate (req/s per endpoint)",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by(method, uri) (rate(http_server_requests_seconds_count{job=\"user-service\"}[5m]))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "HTTP Latency Percentiles (P50 / P95 / P99)",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.50, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"user-service\"}[5m])))",
+              "legendFormat": "P50 {{uri}}", "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.95, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"user-service\"}[5m])))",
+              "legendFormat": "P95 {{uri}}", "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.99, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"user-service\"}[5m])))",
+              "legendFormat": "P99 {{uri}}", "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "JVM Heap Usage",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_used_bytes{job=\"user-service\", area=\"heap\"}",
+              "legendFormat": "heap used", "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_max_bytes{job=\"user-service\", area=\"heap\"}",
+              "legendFormat": "heap max", "refId": "B"
+            }
+          ]
+        }
+      ]
+    }
+
+  # ── S3: Booking Service Dashboard (owned by S3-INFRA) ──
+  booking-dashboard.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["booking-service", "eventticketing"],
+      "time": { "from": "now-1h", "to": "now" },
+      "timezone": "browser",
+      "title": "Booking Service Dashboard",
+      "uid": "booking-service-dashboard",
+      "version": 1,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate",
+          "description": "LogQL — ERROR-level log lines per minute from booking-service",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"booking-service\", level=\"ERROR\"}[1m]))",
+              "refId": "A", "legendFormat": "errors/min"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Saga State Transitions",
+          "description": "LogQL — Every booking status transition logged by BookingService.",
+          "type": "logs",
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "{app=\"eventticketing\", service=\"booking-service\"} |= \"transitioning\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Feign Call Outcomes",
+          "description": "LogQL — Successful Feign calls vs failures.",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"booking-service\"} |= \"returned successfully\" [5m]))",
+              "refId": "A", "legendFormat": "feign success"
+            },
+            {
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"booking-service\"} |= \"Feign call to\" |= \"failed\" [5m]))",
+              "refId": "B", "legendFormat": "feign failures"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Request Rate",
+          "description": "PromQL — Requests per second per endpoint.",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (uri) (rate(http_server_requests_seconds_count{job=\"booking-service\"}[5m]))",
+              "refId": "A", "legendFormat": "{{uri}}"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Latency P50 / P95 / P99",
+          "description": "PromQL — Latency percentiles per endpoint.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"booking-service\"}[5m])))",
+              "refId": "A", "legendFormat": "p99"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"booking-service\"}[5m])))",
+              "refId": "B", "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"booking-service\"}[5m])))",
+              "refId": "C", "legendFormat": "p50"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "JVM Heap Usage",
+          "description": "PromQL — Heap used vs committed.",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "jvm_memory_used_bytes{job=\"booking-service\", area=\"heap\"}",
+              "refId": "A", "legendFormat": "heap used"
+            },
+            {
+              "expr": "jvm_memory_committed_bytes{job=\"booking-service\", area=\"heap\"}",
+              "refId": "B", "legendFormat": "heap committed"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "Saga Queue Processing Rate",
+          "description": "PromQL — Rate of messages consumed from the saga-feedback queue.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "rate(spring_rabbitmq_listener_seconds_count{queue=\"booking.saga-feedback\"}[5m])",
+              "refId": "A", "legendFormat": "messages/sec"
+            }
+          ]
+        }
+      ]
+    }
+
+  # ── S2/S6: Event Service Dashboard (Unified Slice 5 & Slice 6) ──
+  event-dashboard.json: |
+    {
+      "annotations": {
+        "list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": [
+        "event-service",
+        "eventticketing"],
+      "templating": {
+        "list": []},
+      "time": {
+        "from": "now-1h",
+        "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Event Service Dashboard",
+      "uid": "event-service-dashboard",
+      "version": 1,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate (errors per minute)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0},
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"},
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"event-service\", level=\"ERROR\"}[1m]))",
+              "legendFormat": "errors/min",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Feign Call Failures",
+          "type": "logs",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0},
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"},
+              "expr": "{app=\"eventticketing\", service=\"event-service\"} |~ \"FeignException|unavailable\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Feign Call Outcomes",
+          "type": "logs",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8},
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"},
+              "expr": "{app=\"eventticketing\", service=\"event-service\"} |~ \"Feign|FeignException\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Request Rate (req/s per endpoint)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8},
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "sum by(method, uri) (rate(http_server_requests_seconds_count{job=\"event-service\"}[5m]))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "HTTP Latency Percentiles (P50 / P95 / P99)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16},
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "histogram_quantile(0.50, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"event-service\"}[5m])))",
+              "legendFormat": "P50 {{uri}}",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "histogram_quantile(0.95, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"event-service\"}[5m])))",
+              "legendFormat": "P95 {{uri}}",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "histogram_quantile(0.99, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"event-service\"}[5m])))",
+              "legendFormat": "P99 {{uri}}",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "JVM Heap Usage",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16},
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "jvm_memory_used_bytes{job=\"event-service\", area=\"heap\"}",
+              "legendFormat": "heap used",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"},
+              "expr": "jvm_memory_max_bytes{job=\"event-service\", area=\"heap\"}",
+              "legendFormat": "heap max",
+              "refId": "B"
+            }
+          ]
+        }
+      ]
+    }
+
+  # ── S4: Ticket Service Dashboard (owned by S4-INFRA) ──
+  ticket-dashboard.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["ticket-service", "eventticketing"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Ticket Service Dashboard",
+      "uid": "ticket-service-dashboard",
+      "version": 1,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate (errors per minute)",
+          "description": "Count of ERROR-level log lines from ticket-service per minute. Spikes indicate scan failures, Feign errors, or Cassandra write issues.",
+          "type": "timeseries",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "fixed", "fixedColor": "red" },
+              "custom": { "lineWidth": 1, "fillOpacity": 10 },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"ticket-service\", level=\"ERROR\"}[1m]))",
+              "legendFormat": "errors/min",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "RabbitMQ Ticket Events (issued / cancelled / saga)",
+          "description": "Log lines for ticket.issued, ticket.cancelled, ticket.status-changed published events and booking.placed / booking.cancelled consumed events.",
+          "type": "logs",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"ticket-service\"} |~ \"ticket\\.issued|ticket\\.cancelled|ticket\\.status-changed|booking\\.placed|booking\\.cancelled\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Feign Call Outcomes",
+          "description": "Log lines for Feign calls to booking-service and event-service. Detects downstream degradation affecting ticket issuance and nearby-event lookups.",
+          "type": "logs",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"ticket-service\"} |~ \"Feign|FeignException\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Request Rate (req/s per endpoint)",
+          "description": "Requests per second to ticket-service endpoints grouped by method and URI. Shows load on scan, batch-issue, and history endpoints.",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1, "fillOpacity": 10 },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by(method, uri) (rate(http_server_requests_seconds_count{job=\"ticket-service\"}[5m]))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "HTTP Latency Percentiles (P50 / P95 / P99)",
+          "description": "Request latency percentiles for ticket-service. P99 spikes on /nearby or /batch indicate slow Feign chains or Cassandra writes.",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1, "fillOpacity": 10 },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.50, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"ticket-service\"}[5m])))",
+              "legendFormat": "P50 {{uri}}",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.95, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"ticket-service\"}[5m])))",
+              "legendFormat": "P95 {{uri}}",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.99, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"ticket-service\"}[5m])))",
+              "legendFormat": "P99 {{uri}}",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "JVM Heap Usage",
+          "description": "JVM heap used vs max for ticket-service. Sustained growth approaching max heap indicates a Redis cache or Cassandra result-set memory leak.",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1, "fillOpacity": 10 },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_used_bytes{job=\"ticket-service\", area=\"heap\"}",
+              "legendFormat": "heap used",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_max_bytes{job=\"ticket-service\", area=\"heap\"}",
+              "legendFormat": "heap max",
+              "refId": "B"
+            }
+          ]
+        }
+      ]
+    }
+
+  # ── S5: Sales Service Dashboard (owned by S5-INFRA) ──
+  sales-dashboard.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["sales-service", "eventticketing"],
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Sales Service Dashboard",
+      "uid": "sales-service-dashboard",
+      "version": 1,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Error Rate (errors per minute)",
+          "description": "LogQL — ERROR-level log lines per minute from sales-service",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"sales-service\", level=\"ERROR\"}[1m]))",
+              "legendFormat": "errors/min",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Payment Saga Events",
+          "description": "LogQL — payment.initiated / payment.completed / payment.failed / payment.refunded routing keys",
+          "type": "logs",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"sales-service\"} |~ \"payment\\.initiated|payment\\.completed|payment\\.failed|payment\\.refunded\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Feign Call Outcomes",
+          "description": "LogQL — Feign calls to user-service / booking-service / event-service",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"sales-service\"} |= \"returned successfully\" [5m]))",
+              "legendFormat": "feign success",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "sum(count_over_time({app=\"eventticketing\", service=\"sales-service\"} |= \"FeignException\" [5m]))",
+              "legendFormat": "feign failures",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Request Rate (req/s per endpoint)",
+          "description": "PromQL — Requests per second grouped by URI",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by(method, uri) (rate(http_server_requests_seconds_count{job=\"sales-service\"}[5m]))",
+              "legendFormat": "{{method}} {{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "HTTP Latency Percentiles (P50 / P95 / P99)",
+          "description": "PromQL — Latency percentiles per endpoint",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.50, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"sales-service\"}[5m])))",
+              "legendFormat": "P50 {{uri}}",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.95, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"sales-service\"}[5m])))",
+              "legendFormat": "P95 {{uri}}",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.99, sum by(le, uri) (rate(http_server_requests_seconds_bucket{job=\"sales-service\"}[5m])))",
+              "legendFormat": "P99 {{uri}}",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "JVM Heap Usage",
+          "description": "PromQL — Heap used vs max",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_used_bytes{job=\"sales-service\", area=\"heap\"}",
+              "legendFormat": "heap used",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "jvm_memory_max_bytes{job=\"sales-service\", area=\"heap\"}",
+              "legendFormat": "heap max",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "TicketSale Status Transitions",
+          "description": "LogQL — PENDING → COMPLETED / FAILED / REFUNDED state changes",
+          "type": "logs",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "loki" },
+              "expr": "{app=\"eventticketing\", service=\"sales-service\"} |~ \"status=COMPLETED|status=FAILED|status=REFUNDED|status=PENDING\"",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Active TicketSales (PENDING count)",
+          "description": "PromQL — Gauge of PENDING sales currently awaiting payment",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(increase(http_server_requests_seconds_count{job=\"sales-service\", uri=~\"/api/sales/booking/.*\", status=\"201\"}[5m]))",
+              "legendFormat": "new sales (5m)",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

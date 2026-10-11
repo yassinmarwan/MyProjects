@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-postgres
+  namespace: eventticketing
+spec:
+  clusterIP: None
+  selector:
+    app: sales-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

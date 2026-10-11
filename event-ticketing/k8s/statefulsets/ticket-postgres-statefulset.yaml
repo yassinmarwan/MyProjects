@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ticket-postgres
+  namespace: eventticketing
+spec:
+  serviceName: ticket-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticket-postgres
+  template:
+    metadata:
+      labels:
+        app: ticket-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ticket-postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ticket-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ticket-postgres-secret
+                  key: POSTGRES_DB
+          volumeMounts:
+            - name: ticket-postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: ticket-postgres-storage
+          persistentVolumeClaim:
+            claimName: ticket-postgres-pvc
